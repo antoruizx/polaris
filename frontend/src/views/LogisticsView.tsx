@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, Compartment, Operation, Pick, Product } from "../api";
 import { useHubEvent, useOnReconnect } from "../realtime";
+import { Warehouse3D } from "../three/Scene3D";
 import { hhmm, Pill, secs, stockPill, useAction, useToast } from "../ui";
 
 const normalize = (s: string) =>
@@ -20,6 +21,11 @@ export function LogisticsView() {
   const [qty, setQty] = useState(1);
   const [flash, setFlash] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [workerStatus, setWorkerStatus] = useState("");
+  const qtyRef = useRef(qty);
+  qtyRef.current = qty;
+  const picksRef = useRef(picks);
+  picksRef.current = picks;
   const run = useAction();
   const toast = useToast();
 
@@ -85,11 +91,6 @@ export function LogisticsView() {
 
   const lit = picks.find((p) => p.status === "lit") ?? null;
   const queued = picks.filter((p) => p.status === "queued");
-  const levels = useMemo(() => {
-    const byLevel = new Map<number, Compartment[]>();
-    for (const c of compartments) byLevel.set(c.level, [...(byLevel.get(c.level) ?? []), c]);
-    return [...byLevel.entries()].sort(([a], [b]) => a - b);
-  }, [compartments]);
   const maxStock = Math.max(1, ...products.map((p) => p.stock));
 
   // ---------- Acciones ----------
@@ -122,6 +123,12 @@ export function LogisticsView() {
       return;
     }
     void locate(c.productSku);
+  };
+
+  // El operario 3D volvió con el producto: se registra el retiro como si apretara el botón.
+  const onDelivered = (pickId: string) => {
+    const pick = picksRef.current.find((p) => p.id === pickId && p.status === "lit");
+    if (pick) void run(() => api.confirmPick(pick.id, qtyRef.current)).then(applyPick);
   };
 
   const elapsed = lit?.litAt ? now - new Date(lit.litAt).getTime() : 0;
@@ -197,6 +204,7 @@ export function LogisticsView() {
                     <div className="ac-meta">
                       Compartimento {lit.compartmentCode} · stock {litStock}
                     </div>
+                    {workerStatus && <div className="ac-worker">🦺 {workerStatus}</div>}
                   </div>
                   <div className="timer">{secs(elapsed)}</div>
                 </div>
@@ -256,41 +264,24 @@ export function LogisticsView() {
               </span>
             </span>
           </div>
-          <div className="levels">
-            {levels.map(([level, cells]) => (
-              <div className="shelf" key={level}>
-                <div className="shelf-h">
-                  <span>NIVEL {String(level).padStart(2, "0")}</span>
-                  <span>
-                    {cells[0]?.code}…{cells[cells.length - 1]?.code}
-                  </span>
-                </div>
-                <div className="cells">
-                  {cells.map((c) => {
-                    const cls = lit?.compartmentCode === c.code ? " lit" : flash === c.code ? " done" : "";
-                    return (
-                      <button
-                        key={c.code}
-                        className={`cell${cls}${c.productSku ? "" : " vacant"}`}
-                        aria-label={`Compartimento ${c.code}: ${c.productName ?? "vacío"}`}
-                        onClick={() => onCellClick(c)}
-                      >
-                        <span className="led" />
-                        <span className="code">{c.code}</span>
-                        <span className="pn">{c.productName ?? "vacío"}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+          <Warehouse3D
+            compartments={compartments}
+            products={products}
+            lit={lit}
+            flash={flash}
+            onDelivered={onDelivered}
+            onCellClick={(code) => {
+              const c = compartments.find((x) => x.code === code);
+              if (c) onCellClick(c);
+            }}
+            onStatus={setWorkerStatus}
+          />
           <div className="rig-foot">
             <span className={`hw-ind${lit ? " ready" : ""}`} aria-hidden="true" />
             <span>
               {lit
-                ? `Retirá ${qty} u. de ${lit.compartmentCode} y apretá el botón físico de la estantería (o “Confirmar retiro”).`
-                : "El botón físico de la estantería se habilita cuando hay un compartimento encendido."}
+                ? `El operario busca ${qty} u. en ${lit.compartmentCode} y confirma al volver (o apretá el botón físico / “Confirmar retiro”).`
+                : "Elegí un producto: se enciende su luz y el operario va a buscarlo. El botón físico también confirma."}
             </span>
           </div>
         </div>

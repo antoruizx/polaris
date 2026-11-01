@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ParkingMetrics, Reservation, Spot } from "../api";
 import { useHubEvent, useOnReconnect } from "../realtime";
-import { hhmmss, Pill, useAction } from "../ui";
+import { Parking3D } from "../three/Scene3D";
+import { hhmmss, Pill, useAction, useToast } from "../ui";
 
 interface LogEntry {
   id: number;
@@ -17,8 +18,6 @@ const STATE_LABEL: Record<Spot["state"], string> = {
   outOfService: "fuera de servicio",
 };
 
-const CAR_COLORS = ["#c9d1e6", "#e2574c", "#3b6fd8", "#f2c14e", "#8a93a8", "#5aa36b"];
-
 let logSeq = 0;
 
 export function ParkingView() {
@@ -30,6 +29,7 @@ export function ParkingView() {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [now, setNow] = useState(Date.now());
   const run = useAction();
+  const toast = useToast();
 
   const loadAll = useCallback(async () => {
     try {
@@ -92,6 +92,19 @@ export function ParkingView() {
   const full = spots.length > 0 && (free === 0 || waiting.length > 0);
   const guiding = assigned[assigned.length - 1];
 
+  // El auto 3D llegó a su plaza: se avisa a la API como si fuera el sensor ultrasónico.
+  const onParked = (code: string) => void run(() => api.setOccupancy(code, true));
+
+  const releaseSpot = (code: string) => {
+    const spot = spotsRef.current.find((s) => s.code === code);
+    if (spot?.state !== "occupied") {
+      toast(`${code} está ${STATE_LABEL[spot?.state ?? "free"]}.`, "info");
+      return;
+    }
+    void run(() => api.setOccupancy(code, false), () => `El auto de ${code} se va`);
+  };
+  const occupiedSpots = spots.filter((s) => s.state === "occupied");
+
   const remaining = (r: Reservation) => {
     if (!r.expiresAt) return "";
     const s = Math.max(0, Math.round((new Date(r.expiresAt).getTime() - now) / 1000));
@@ -126,33 +139,7 @@ export function ParkingView() {
       </div>
 
       <div className="park-grid">
-        <div className="lot">
-          <div className="lot-row" style={{ gridTemplateColumns: `repeat(${Math.max(spots.length, 1)}, minmax(0, 1fr))` }}>
-            {spots.map((s, i) => (
-              <div
-                key={s.code}
-                className={`space ${s.state}`}
-                aria-label={`${s.code} ${STATE_LABEL[s.state]}`}
-                title={`${s.code} · ${STATE_LABEL[s.state]}${s.distanceCm != null ? ` · ${s.distanceCm} cm` : ""}`}
-              >
-                <span className="lbl">{s.code}</span>
-                <span className="car" style={{ background: CAR_COLORS[i % CAR_COLORS.length] }} />
-                {s.reservation && s.state === "reserved" && <span className="res-tag">{s.reservation.label}</span>}
-                <span className="ir">sensor {s.sensorChannel}</span>
-                <span className="pled" />
-              </div>
-            ))}
-          </div>
-          <div className="aisle">
-            <span className="entry">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M4 12h14M13 6l6 6-6 6" />
-              </svg>
-              ENTRADA · sensor
-            </span>
-            <span className="dash" />
-          </div>
-        </div>
+        <Parking3D spots={spots} queue={queue} onParked={onParked} onSpotClick={releaseSpot} />
 
         <div>
           <div className={`sign${full ? " full" : ""}`}>
@@ -172,6 +159,16 @@ export function ParkingView() {
             >
               Simular auto en la entrada
             </button>
+            {occupiedSpots.length > 0 && (
+              <div className="exits">
+                <span>Salida:</span>
+                {occupiedSpots.map((s) => (
+                  <button key={s.code} className="btn sm" onClick={() => releaseSpot(s.code)}>
+                    {s.code}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="stats">
             <div className="stat">

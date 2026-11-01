@@ -33,3 +33,5 @@ public sealed record ParkingMetricsDto(
     int ArrivalsToday,
     int EntriesToday,
     int ExitsToday);
+
+public sealed record OccupancyRequest(bool Occupied);

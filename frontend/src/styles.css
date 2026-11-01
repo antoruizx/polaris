@@ -321,3 +321,83 @@ footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wr
   .wire { height: 24px; width: 2px; margin: 0 auto; }
   .cells { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* ---------- Escenas 3D ---------- */
+.stage3d {
+  position: relative; height: clamp(380px, 58vh, 560px); border-radius: var(--r); overflow: hidden;
+  border: 1px solid var(--line-2); background: #060a18;
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.06), 0 20px 60px -20px rgba(94, 200, 255, 0.25);
+}
+.stage3d::before, .stage3d::after {
+  content: ""; position: absolute; width: 22px; height: 22px; z-index: 3; pointer-events: none;
+  border: 2px solid var(--guide); filter: drop-shadow(0 0 6px var(--guide));
+}
+.stage3d::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.stage3d::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+.stage-host { position: absolute; inset: 0; }
+.stage-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.stage-labels { position: absolute; inset: 0; pointer-events: none; }
+.rig .stage3d { margin-inline: -4px; }
+
+.cam-bar { position: absolute; top: 12px; left: 38px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 2; }
+.cam {
+  font-family: var(--f-mono); font-size: 11.5px; padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: rgba(6, 10, 24, 0.72); backdrop-filter: blur(6px); color: var(--muted);
+}
+.cam:hover { color: var(--fg); border-color: var(--guide); }
+.cam.on { color: #06101e; background: var(--guide); border-color: var(--guide); box-shadow: 0 0 14px rgba(94, 200, 255, 0.55); }
+
+.hud-status {
+  position: absolute; left: 14px; bottom: 14px; z-index: 2; max-width: calc(100% - 28px);
+  font-size: 12.5px; padding: 7px 12px; border-radius: 10px; color: var(--fg);
+  background: rgba(6, 10, 24, 0.78); border: 1px solid rgba(94, 200, 255, 0.35); backdrop-filter: blur(6px);
+  display: flex; align-items: center; gap: 8px;
+}
+.hud-status b { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--guide); }
+.hud-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--free); box-shadow: 0 0 8px var(--free); flex: none; }
+.hud-dot.busy { background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: blink 0.9s infinite; }
+.hud-hint { position: absolute; right: 14px; bottom: 16px; z-index: 2; font-family: var(--f-mono); font-size: 10.5px; color: var(--faint); }
+.hud-status ~ .hud-hint { bottom: 54px; }
+@keyframes blink { 50% { opacity: 0.35; } }
+
+.lbl3d {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; color: var(--muted);
+  padding: 2px 7px; border-radius: 6px; background: rgba(6, 10, 24, 0.6); border: 1px solid var(--line); white-space: nowrap;
+}
+.lbl3d.dim { background: none; border: 0; color: var(--faint); }
+.lbl3d.title { font-family: var(--f-display); font-size: 13px; letter-spacing: 0.35em; color: var(--gold); background: none; border: 0; text-shadow: 0 0 12px rgba(244, 208, 136, 0.6); }
+.lbl3d.lit { color: #1a1206; background: var(--gold); border-color: var(--gold); font-weight: 700; box-shadow: 0 0 16px rgba(244, 208, 136, 0.7); }
+.lbl3d.spot[data-state="free"] { color: var(--free); border-color: rgba(61, 220, 143, 0.5); }
+.lbl3d.spot[data-state="occupied"] { color: var(--busy); border-color: rgba(255, 91, 107, 0.5); }
+.lbl3d.spot[data-state="reserved"] { color: var(--guide); border-color: rgba(94, 200, 255, 0.6); animation: blink 0.8s infinite; }
+
+.bubble3d {
+  position: relative; transform: translateY(-50%); font-size: 13px; font-weight: 700; color: #0b1022; background: #fff;
+  padding: 7px 13px; border-radius: 12px; border: 2px solid var(--gold); white-space: nowrap; max-width: 260px;
+  overflow: hidden; text-overflow: ellipsis; box-shadow: 0 0 18px rgba(244, 208, 136, 0.45);
+}
+.bubble3d::after {
+  content: ""; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; background: #fff;
+  border-right: 2px solid var(--gold); border-bottom: 2px solid var(--gold); transform: translateX(-50%) rotate(45deg);
+}
+.bubble3d.pop { animation: pop 0.35s ease-out; }
+@keyframes pop { 0% { scale: 0.7; opacity: 0.2; } 70% { scale: 1.06; } 100% { scale: 1; opacity: 1; } }
+
+.sign3d {
+  font-family: var(--f-mono); font-weight: 700; font-size: 22px; line-height: 1; color: var(--free); text-align: center;
+  text-shadow: 0 0 12px rgba(61, 220, 143, 0.8);
+}
+.sign3d small { display: block; font-size: 8.5px; letter-spacing: 0.2em; color: var(--muted); text-shadow: none; margin-bottom: 3px; }
+.sign3d.full { color: var(--busy); font-size: 16px; text-shadow: 0 0 12px rgba(255, 91, 107, 0.8); }
+
+.ac-worker { margin-top: 6px; font-size: 12.5px; color: var(--guide); }
+.exits { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .hud-hint { display: none; }
+  .cam-bar { left: 34px; }
+  .bubble3d { font-size: 11.5px; max-width: 190px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble3d.pop, .lbl3d.spot[data-state="reserved"], .hud-dot.busy { animation: none; }
+}

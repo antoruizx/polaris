@@ -130,6 +130,20 @@ public sealed class ParkingService(
         return await gate.Run(() => RegisterSpotOccupancyAsync(deviceId, channel, occupied, distanceCm, ct), ct);
     }
 
+    /// <summary>
+    /// Simula el sensor de una plaza desde la web (el auto 3D estacionó o se fue).
+    /// Pasa por el mismo camino que una lectura real del ESP32.
+    /// </summary>
+    public async Task<SpotDto> SimulateOccupancyAsync(string code, bool occupied, CancellationToken ct)
+    {
+        var spot = await db.ParkingSpots.AsNoTracking().FirstOrDefaultAsync(s => s.Code == code, ct)
+            ?? throw DomainException.NotFound("spot_not_found", "No existe esa plaza.");
+
+        await gate.Run(() => RegisterSpotOccupancyAsync(spot.DeviceId, spot.SensorChannel, occupied, occupied ? 5 : 30, ct), ct);
+
+        return (await SpotsAsync(ct)).First(s => s.Code == code);
+    }
+
     /// <summary>Vence reservas cuyo auto no llegó a la plaza y asigna lugar a los que esperan.</summary>
     public Task HousekeepAsync(CancellationToken ct) => gate.Run(async () =>
     {

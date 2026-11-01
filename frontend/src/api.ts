@@ -181,6 +181,9 @@ export const api = {
   arrive: () => request<Reservation>("POST", "/api/parking/arrivals"),
   cancelReservation: (id: string) => request<Reservation>("DELETE", `/api/parking/reservations/${id}`),
   metrics: () => request<ParkingMetrics>("GET", "/api/parking/metrics"),
+  /** Simula el sensor de la plaza: el auto 3D estacionó (true) o se fue (false). */
+  setOccupancy: (code: string, occupied: boolean) =>
+    request<Spot>("POST", `/api/parking/spots/${encodeURIComponent(code)}/occupancy`, { occupied }),
 
   devices: () => request<Device[]>("GET", "/api/devices"),
 };

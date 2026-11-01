@@ -24,6 +24,10 @@ public static class ParkingEndpoints
         g.MapDelete("/reservations/{id:guid}", (Guid id, ParkingService s, CancellationToken ct) => s.CancelReservationAsync(id, ct))
             .WithSummary("Cancela una reserva (por ejemplo, un auto que se fue de la fila).");
 
+        g.MapPost("/spots/{code}/occupancy", (string code, OccupancyRequest request, ParkingService s, CancellationToken ct) =>
+                s.SimulateOccupancyAsync(code, request.Occupied, ct))
+            .WithSummary("Simula el sensor de una plaza desde la web: el auto estacionó (true) o se fue (false).");
+
         g.MapGet("/metrics", (DateOnly? date, ParkingService s, CancellationToken ct) => s.MetricsAsync(date, ct))
             .WithSummary("Ocupación actual, llegadas, ingresos y egresos del día.");
 
