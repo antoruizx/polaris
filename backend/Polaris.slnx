@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Polaris.Domain/Polaris.Domain.csproj" />
+    <Project Path="src/Polaris.Application/Polaris.Application.csproj" />
+    <Project Path="src/Polaris.Infrastructure/Polaris.Infrastructure.csproj" />
+    <Project Path="src/Polaris.Api/Polaris.Api.csproj" />
+    <Project Path="src/Polaris.DeviceSimulator/Polaris.DeviceSimulator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Polaris.Domain.Tests/Polaris.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

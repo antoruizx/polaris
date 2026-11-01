@@ -1,0 +1,67 @@
+{
+  // Polaris: Ctrl+Shift+B (o F5) levanta la base, el backend y el frontend.
+  "version": "2.0.0",
+  "options": {
+    "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] }
+  },
+  "tasks": [
+    {
+      "label": "1. Base de datos (Docker)",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "presentation": { "group": "polaris", "panel": "dedicated", "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "2. Backend - API (localhost:5080)",
+      "type": "shell",
+      "command": "dotnet run --project src/Polaris.Api",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "dependsOn": "1. Base de datos (Docker)",
+      "isBackground": true,
+      "presentation": { "group": "polaris", "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": {
+        "owner": "polaris-backend",
+        "pattern": { "regexp": "^__never__$" },
+        "background": {
+          "activesBegin": true,
+          "beginsPattern": ".",
+          "endsPattern": "Now listening on"
+        }
+      }
+    },
+    {
+      "label": "3. Frontend - Web (localhost:5173)",
+      "type": "shell",
+      "command": "npm install --no-audit --no-fund && npm run dev",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "isBackground": true,
+      "presentation": { "group": "polaris", "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": {
+        "owner": "polaris-frontend",
+        "pattern": { "regexp": "^__never__$" },
+        "background": {
+          "activesBegin": true,
+          "beginsPattern": ".",
+          "endsPattern": "Local:"
+        }
+      }
+    },
+    {
+      "label": "INICIAR POLARIS",
+      "dependsOn": ["2. Backend - API (localhost:5080)", "3. Frontend - Web (localhost:5173)"],
+      "dependsOrder": "parallel",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Correr tests del backend",
+      "type": "shell",
+      "command": "dotnet test",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

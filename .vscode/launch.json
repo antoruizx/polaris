@@ -1,0 +1,14 @@
+{
+  // F5: levanta todo y abre la pagina de Polaris en Edge.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "INICIAR POLARIS (abre la web)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "preLaunchTask": "INICIAR POLARIS"
+    }
+  ]
+}
